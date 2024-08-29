@@ -36,7 +36,7 @@ def update_last_processed_file(data: List[dict]):
     on the field date_de_publication, we set the new last_processed day to the latest timestamp minus one day.
     """
     publication_dates_as_timestamps = [
-        datetime.datetime.strptime(row["date_de_publication"], "%Y-%m-%d")
+        datetime.datetime.strptime(row["date_de_publication"], "%Y-%m-%dT%H:%M:%S%z")
         for row in data
     ]
     last_processed = max(publication_dates_as_timestamps) - datetime.timedelta(days=1)
@@ -54,7 +54,7 @@ def get_all_data(last_processed_timestamp: datetime.datetime) -> List[dict]:
         url = URL_API.format(last_processed_timestamp, n_results)
         response = requests.get(url)
         data = response.json()
-        current_results = data["results"]
+        current_results = data.get("results",[])
         full_data.extend(current_results)
         n_results += len(current_results)
         if len(current_results) < MAX_LIMIT:
@@ -65,7 +65,7 @@ def get_all_data(last_processed_timestamp: datetime.datetime) -> List[dict]:
             # of the last retrieved result, minus one day. In case of duplicates, they will be filtered
             # in the deduplicate_data function. We also reset n_results (or the offset parameter) to 0.
             last_timestamp = current_results[-1]["date_de_publication"]
-            timestamp_as_date = datetime.datetime.strptime(last_timestamp, "%Y-%m-%d")
+            timestamp_as_date = datetime.datetime.strptime(last_timestamp, "%Y-%m-%dT%H:%M:%S%z")
             timestamp_as_date = timestamp_as_date - datetime.timedelta(days=1)
             last_processed_timestamp = timestamp_as_date.strftime("%Y-%m-%d")
             n_results = 0
